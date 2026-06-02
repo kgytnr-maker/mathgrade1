@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>동류항 분류 드래그 게임 - 업그레이드 버전</title>
+  <style>
+    body {
+      font-family: "맑은 고딕", sans-serif;
+      background: linear-gradient(135deg, #f6f9ff, #e3f0ff);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 24px 28px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+      max-width: 980px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      text-align: center;
+      color: #2d3436;
+    }
+
+    .subtitle {
+      margin: 0 0 12px;
+      text-align: center;
+      font-size: 14px;
+      color: #636e72;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      color: #2d3436;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #e3f2fd;
+      color: #1565c0;
+      margin-left: 6px;
+    }
+
+    .stat {
+      background: #f5f7ff;
+      padding: 6px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-label {
+      color: #636e72;
+      font-size: 13px;
+    }
+
+    .stat-value {
+      font-weight: bold;
+      color: #2d3436;
+    }
+
+    .expression-box {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #f8faff;
+      border: 1px solid #c5d0ff;
+      text-align: center;
+    }
+
+    .expression-title {
+      font-size: 13px;
+      color: #636e72;
+      margin-bottom: 4px;
+    }
+
+    .expression {
+      font-size: 20px;
+      font-weight: bold;
+      color: #2d3436;
+    }
+
+    .hint-box {
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #555;
+      background: #fff9c4;
+      border-radius: 8px;
+      padding: 6px 10px;
+      border: 1px solid #ffe082;
+    }
+
+    .hint-strong {
+      font-weight: bold;
+      color: #e65100;
+    }
+
+    .layout {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .left,
+    .right {
+      flex: 1 1 0;
+      min-width: 260px;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #2d3436;
+    }
+
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 72px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px dashed #c5c9dd;
+      background: #f8f9ff;
+      box-sizing: border-box;
+    }
+
+    .card {
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #d0d4e4;
+      cursor: grab;
+      font-size: 14px;
+      user-select: none;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+    }
+
+    .card.dragging {
+      opacity: 0.7;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      transform: scale(1.05);
+      background: #e3f2fd;
+    }
+
+    .groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .group-box {
+      flex: 1 1 0;
+      min-width: 150px;
+      min-height: 90px;
+      border-radius: 10px;
+      border: 2px dashed #b2bec3;
+      padding: 6px;
+      background: #fcfcfc;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    .group-title {
+      font-size: 13px;
+      color: #636e72;
+      margin-bottom: 4px;
+    }
+
+    .group-inner {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: flex-start;
+      min-height: 40px;
+    }
+
+    .group-box.over {
+      background: #eaf3ff;
+      border-color: #4a63ff;
+      transform: translateY(-2px);
+    }
+
+    .group-box.correct {
+      border-color: #00b894;
+      background: #e8fdf7;
+    }
+
+    .group-box.wrong {
+      border-color: #d63031;
+      background: #ffeaea;
+      animation: shake 0.2s linear 2;
+    }
+
+    @keyframes shake {
+      0% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(-2px);
+      }
+      50% {
+        transform: translateX(2px);
+      }
+      75% {
+        transform: translateX(-2px);
+      }
+      100% {
+        transform: translateX(0);
+      }
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .controls-left,
+    .controls-right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    #check-btn {
+      background: #4a63ff;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(74, 99, 255, 0.4);
+    }
+
+    #next-btn {
+      background: #00b894;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 184, 148, 0.4);
+    }
+
+    #reset-btn {
+      background: #b2bec3;
+      color: #ffffff;
+    }
+
+    .level-select {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #b2bec3;
+      background: #ffffff;
+      font-size: 13px;
+    }
+
+    .result {
+      margin-top: 10px;
+      min-height: 40px;
+      font-size: 14px;
+      white-space: pre-line;
+    }
+
+    .result.correct {
+      color: #00b894;
+    }
+
+    .result.wrong {
+      color: #d63031;
+    }
+
+    .group-error {
+      font-size: 12px;
+      color: #d63031;
+      margin-top: 2px;
+    }
+
+    .timer-bar-container {
+      position: relative;
+      width: 180px;
+      height: 10px;
+      border-radius: 999px;
+      background: #eceff1;
+      overflow: hidden;
+    }
+
+    .timer-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #00b894, #fdcb6e, #d63031);
+      transform-origin: left center;
+      transform: scaleX(1);
+      transition: transform 0.1s linear;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #636e72;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>동류항 분류 드래그 게임</h1>
+    <div class="subtitle">
+      같은 문자·차수를 가진 항끼리 상자에 모아 보세요!
+      <span class="badge">업그레이드 버전</span>
+    </div>
+
+    <div class="top-bar">
+      <div>
+        <span class="stat">
+          <span class="stat-label">레벨:</span>
+          <span class="stat-value" id="level-display">1 (기본)</span>
+        </span>
+        <select id="level-select" class="level-select">
+          <option value="1">레벨 1 - a, b, 상수</option>
+          <option value="2">레벨 2 - x, y, 상수</option>
+          <option value="3">레벨 3 - x, x², y, 상수</option>
+        </select>
+      </div>
+      <div>
+        <span class="stat">
+          <span class="stat-label">점수:</span>
+          <span class="stat-value" id="score-display">0</span>
+        </span>
+        <span class="stat">
+          <span class="stat-label">최고 점수:</span>
+          <span class="stat-value" id="best-score-display">0</span>
+        </span>
+      </div>
+      <div>
+        <span class="stat">
+          <span class="stat-label">라운드:</span>
+          <span class="stat-value" id="round-display">1 / 5</span>
+        </span>
+        <div class="timer-bar-container">
+          <div class="timer-bar" id="timer-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="expression-box">
+      <div class="expression-title">이번 라운드의 식</div>
+      <div class="expression" id="expression"></div>
+    </div>
+
+    <div id="hint" class="hint-box">
+      <span class="hint-strong">힌트:</span>
+      같은 문자와 같은 차수를 가진 항끼리, 그리고 숫자만 있는 상수끼리 모으면 동류항입니다.
+    </div>
+
+    <div class="layout">
+      <div class="left">
+        <div class="section-title">항 카드 (드래그해서 상자로 이동하세요)</div>
+        <div class="cards" id="cards-container"></div>
+      </div>
+      <div class="right">
+        <div class="section-title">동류항 상자</div>
+        <div class="groups" id="groups-container"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controls-left">
+        <button id="check-btn">채점하기</button>
+        <button id="next-btn">다음 라운드</button>
+      </div>
+      <div class="controls-right">
+        <button id="reset-btn">전체 초기화</button>
+        <span class="small">※ 타이머가 다 되면 자동으로 채점됩니다.</span>
+      </div>
+    </div>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    // ===== 레벨 정의 및 문제 생성 규칙 =====
+    const levels = {
+      1: {
+        name: "1 (기본)",
+        groups: [
+          {
+            groupKey: "a",
+            label: "상자 1 (a 끼리)",
+            generator: () => generateLikeTerms("a", 1),
+          },
+          {
+            groupKey: "b",
+            label: "상자 2 (b 끼리)",
+            generator: () => generateLikeTerms("b", 1),
+          },
+          {
+            groupKey: "const",
+            label: "상자 3 (상수항 끼리)",
+            generator: () => generateConstantTerms(),
+          },
+        ],
+      },
+      2: {
+        name: "2 (x, y, 상수)",
+        groups: [
+          {
+            groupKey: "x",
+            label: "상자 1 (x 끼리)",
+            generator: () => generateLikeTerms("x", 1),
+          },
+          {
+            groupKey: "y",
+            label: "상자 2 (y 끼리)",
+            generator: () => generateLikeTerms("y", 1),
+          },
+          {
+            groupKey: "const",
+            label: "상자 3 (상수항 끼리)",
+            generator: () => generateConstantTerms(),
+          },
+        ],
+      },
+      3: {
+        name: "3 (x, x², y, 상수)",
+        groups: [
+          {
+            groupKey: "x",
+            label: "상자 1 (x 끼리)",
+            generator: () => generateLikeTerms("x", 1),
+          },
+          {
+            groupKey: "x2",
+            label: "상자 2 (x² 끼리)",
+            generator: () => generateLikeTerms("x²", 2),
+          },
+          {
+            groupKey: "y",
+            label: "상자 3 (y 끼리)",
+            generator: () => generateLikeTerms("y", 1),
+          },
+          {
+            groupKey: "const",
+            label: "상자 4 (상수항 끼리)",
+            generator: () => generateConstantTerms(),
+          },
+        ],
+      },
+    };
+
+    // 전역 상태
+    let currentLevel = 1;
+    let currentTerms = [];   // { text, groupKey }
+    let shuffledTerms = [];  // 섞인 순서
+    let draggingCard = null;
+    let score = 0;
+    let bestScore = 0;
+    let round = 1;
+    const maxRounds = 5;
+
+    let timerDuration = 30; // 초
+    let timerRemaining = timerDuration;
+    let timerInterval = null;
+    let autoChecked = false;
+
+    // DOM 요소
+    const expressionEl = document.getElementById("expression");
+    const cardsContainer = document.getElementById("cards-container");
+    const groupsContainer = document.getElementById("groups-container");
+    const resultEl = document.getElementById("result");
+
+    const levelDisplay = document.getElementById("level-display");
+    const levelSelect = document.getElementById("level-select");
+    const scoreDisplay = document.getElementById("score-display");
+    const bestScoreDisplay = document.getElementById("best-score-display");
+    const roundDisplay = document.getElementById("round-display");
+    const timerBar = document.getElementById("timer-bar");
+
+    const checkBtn = document.getElementById("check-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    // ===== 유틸: 난수, 항 생성 =====
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomCoefficient() {
+      let n = randInt(1, 9);
+      if (Math.random() < 0.5) n = -n;
+      return n;
+    }
+
+    function termToText(coef, variable, degree) {
+      let absC = Math.abs(coef);
+      let sign = coef > 0 ? "" : "-";
+      let coefPart = absC === 1 ? "" : String(absC);
+      let varPart = variable;
+      if (degree === 2 && variable === "x²") {
+        varPart = "x²";
+      }
+      return sign + coefPart + varPart;
+    }
+
+    function generateLikeTerms(variable, degree) {
+      const count = randInt(2, 3);
+      const terms = [];
+      for (let i = 0; i < count; i++) {
+        const c = randomCoefficient();
+        terms.push({ text: termToText(c, variable, degree) });
+      }
+      return terms;
+    }
+
+    function generateConstantTerms() {
+      const count = randInt(2, 3);
+      const terms = [];
+      for (let i = 0; i < count; i++) {
+        let c = randomCoefficient();
+        terms.push({ text: String(c) });
+      }
+      return terms;
+    }
+
+    // ===== 레벨/라운드 세팅 =====
+
+    function setupLevel(level) {
+      currentLevel = level;
+      const levelInfo = levels[level];
+      levelDisplay.textContent = levelInfo.name;
+      createGroupBoxes(levelInfo.groups);
+      startNewRound();
+    }
+
+    function createGroupBoxes(groupsInfo) {
+      groupsContainer.innerHTML = "";
+      groupsInfo.forEach((g) => {
+        const box = document.createElement("div");
+        box.className = "group-box";
+        box.dataset.groupKey = g.groupKey;
+
+        const title = document.createElement("div");
+        title.className = "group-title";
+        title.textContent = g.label;
+
+        const inner = document.createElement("div");
+        inner.className = "group-inner";
+
+        box.appendChild(title);
+        box.appendChild(inner);
+        groupsContainer.appendChild(box);
+
+        addGroupBoxEvents(box);
+      });
+    }
+
+    function startNewRound() {
+      stopTimer();
+      timerRemaining = timerDuration;
+      updateTimerBar();
+
+      autoChecked = false;
+      resultEl.textContent = "";
+      resultEl.className = "result";
+
+      document.querySelectorAll(".group-box").forEach((box) => {
+        box.classList.remove("correct", "wrong");
+        const inner = box.querySelector(".group-inner");
+        inner.innerHTML = "";
+      });
+
+      generateRoundTerms();
+      renderCards();
+      startTimer();
+    }
+
+    // ★ 여기서 식/카드 순서를 모두 섞어서 생성
+    function generateRoundTerms() {
+      const levelInfo = levels[currentLevel];
+      currentTerms = [];
+
+      levelInfo.groups.forEach((groupInfo) => {
+        let terms = groupInfo.generator();
+        terms.forEach((t) => {
+          currentTerms.push({
+            text: t.text,
+            groupKey: groupInfo.groupKey,
+          });
+        });
+      });
+
+      // currentTerms를 섞어서 shuffledTerms로
+      shuffledTerms = [...currentTerms].sort(() => Math.random() - 0.5);
+
+      // 식은 섞인 순서(shuffledTerms) 기준으로 생성
+      const expression = shuffledTerms
+        .map((t, i) => {
+          if (i === 0) return t.text;
+          if (t.text.startsWith("-")) return " " + t.text;
+          return " + " + t.text;
+        })
+        .join("");
+
+      expressionEl.textContent = expression;
+    }
+
+    // ★ 카드도 shuffledTerms 순서로 생성
+    function renderCards() {
+      cardsContainer.innerHTML = "";
+      shuffledTerms.forEach((term, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.textContent = term.text;
+        card.draggable = true;
+
+        // 원래 currentTerms에서의 인덱스를 찾아 data-index로 저장
+        const originalIndex = currentTerms.findIndex(
+          (t) => t.text === term.text && t.groupKey === term.groupKey
+        );
+        card.dataset.index = originalIndex;
+
+        addCardEvents(card);
+        cardsContainer.appendChild(card);
+      });
+    }
+
+    // ===== 드래그 & 드롭 =====
+
+    function addCardEvents(card) {
+      card.addEventListener("dragstart", (e) => {
+        draggingCard = card;
+        card.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+      });
+
+      card.addEventListener("dragend", () => {
+        draggingCard = null;
+        card.classList.remove("dragging");
+      });
+    }
+
+    function addGroupBoxEvents(box) {
+      const inner = box.querySelector(".group-inner");
+
+      box.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        box.classList.add("over");
+      });
+
+      box.addEventListener("dragleave", () => {
+        box.classList.remove("over");
+      });
+
+      box.addEventListener("drop", (e) => {
+        e.preventDefault();
+        box.classList.remove("over");
+        if (draggingCard) {
+          inner.appendChild(draggingCard);
+        }
+      });
+    }
+
+    cardsContainer.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+    cardsContainer.addEventListener("drop", (e) => {
+      e.preventDefault();
+      if (draggingCard) {
+        cardsContainer.appendChild(draggingCard);
+      }
+    });
+
+    // ===== 채점 & 점수 =====
+
+    function checkAnswer(auto = false) {
+      if (auto && autoChecked) return;
+      autoChecked = true;
+      stopTimer();
+
+      document.querySelectorAll(".group-box").forEach((box) => {
+        box.classList.remove("correct", "wrong");
+        const errEl = box.querySelector(".group-error");
+        if (errEl) errEl.remove();
+      });
+
+      const groupBoxes = document.querySelectorAll(".group-box");
+      let correctGroups = 0;
+      let totalGroups = groupBoxes.length;
+      let hasError = false;
+
+      groupBoxes.forEach((box) => {
+        const expectedGroup = box.dataset.groupKey;
+        const inner = box.querySelector(".group-inner");
+        const cards = Array.from(inner.querySelectorAll(".card"));
+
+        const groupsInBox = cards.map((card) => {
+          const termIndex = Number(card.dataset.index);
+          return currentTerms[termIndex].groupKey;
+        });
+
+        if (cards.length === 0) {
+          hasError = true;
+          box.classList.add("wrong");
+          showGroupError(
+            box,
+            "이 상자에 들어가야 할 항이 아직 없어요. 알맞은 항을 드래그해 보세요."
+          );
+          return;
+        }
+
+        const allSame =
+          groupsInBox.length > 0 &&
+          groupsInBox.every((g) => g === expectedGroup);
+
+        if (allSame) {
+          box.classList.add("correct");
+          correctGroups++;
+        } else {
+          hasError = true;
+          box.classList.add("wrong");
+          const wrongTerms = cards
+            .filter((card) => {
+              const termIndex = Number(card.dataset.index);
+              return currentTerms[termIndex].groupKey !== expectedGroup;
+            })
+            .map((card) => card.textContent);
+
+          let message = "";
+          if (expectedGroup === "const") {
+            message =
+              `이 상자에는 숫자만 있는 상수항만 모아야 해요.\n` +
+              `${wrongTerms.join(", ")} 은(는) 문자가 있어서 상수항이 아니에요.`;
+          } else {
+            message =
+              `이 상자에는 ${expectedGroup} 가 들어간 항들만 모아야 해요.\n` +
+              `${wrongTerms.join(", ")} 은(는) 다른 문자이거나 차수가 달라서 동류항이 아니에요.`;
+          }
+          showGroupError(box, message);
+        }
+      });
+
+      let gainedScore = 0;
+      if (!hasError && correctGroups === totalGroups) {
+        gainedScore = 10;
+        resultEl.textContent =
+          "모든 상자에 동류항끼리 완벽하게 잘 모았어요! 👏\n" +
+          "같은 문자, 같은 차수를 가진 항끼리, 숫자만 있는 항끼리는 따로 모아 주는 것이 동류항 분류입니다.\n" +
+          `+${gainedScore}점`;
+        resultEl.classList.add("correct");
+      } else {
+        gainedScore = correctGroups * 3;
+        resultEl.textContent =
+          `올바르게 모인 상자: ${correctGroups} / ${totalGroups}개\n` +
+          `가까워요! 설명을 읽고 항을 다시 움직여 보세요.\n` +
+          `이번 라운드 점수: +${gainedScore}점`;
+        resultEl.classList.add("wrong");
+      }
+
+      score += gainedScore;
+      scoreDisplay.textContent = score;
+      if (score > bestScore) {
+        bestScore = score;
+        bestScoreDisplay.textContent = bestScore;
+      }
+
+      if (round >= maxRounds) {
+        nextBtn.textContent = "라운드 끝! 다시 시작";
+      } else {
+        nextBtn.textContent = "다음 라운드";
+      }
+    }
+
+    function showGroupError(box, message) {
+      const errDiv = document.createElement("div");
+      errDiv.className = "group-error";
+      errDiv.textContent = message;
+      box.appendChild(errDiv);
+    }
+
+    // ===== 타이머 =====
+
+    function startTimer() {
+      stopTimer();
+      timerInterval = setInterval(() => {
+        timerRemaining -= 1;
+        if (timerRemaining < 0) {
+          timerRemaining = 0;
+        }
+        updateTimerBar();
+        if (timerRemaining <= 0) {
+          stopTimer();
+          checkAnswer(true);
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function updateTimerBar() {
+      const ratio = timerRemaining / timerDuration;
+      timerBar.style.transform = `scaleX(${Math.max(ratio, 0)})`;
+    }
+
+    // ===== 라운드 & 리셋 =====
+
+    function nextRound() {
+      if (round >= maxRounds) {
+        round = 1;
+        score = 0;
+        scoreDisplay.textContent = score;
+        resultEl.textContent =
+          "새로운 라운드를 시작합니다! 레벨을 바꾸고 싶다면 위에서 선택해 보세요.";
+        resultEl.className = "result";
+        nextBtn.textContent = "다음 라운드";
+      } else {
+        round++;
+      }
+      roundDisplay.textContent = `${round} / ${maxRounds}`;
+      startNewRound();
+    }
+
+    function resetAll() {
+      stopTimer();
+      score = 0;
+      round = 1;
+      scoreDisplay.textContent = score;
+      roundDisplay.textContent = `${round} / ${maxRounds}`;
+      resultEl.textContent = "";
+      resultEl.className = "result";
+      startNewRound();
+    }
+
+    // ===== 이벤트 바인딩 =====
+
+    checkBtn.addEventListener("click", () => checkAnswer(false));
+    nextBtn.addEventListener("click", nextRound);
+    resetBtn.addEventListener("click", resetAll);
+
+    levelSelect.addEventListener("change", (e) => {
+      const newLevel = Number(e.target.value);
+      round = 1;
+      roundDisplay.textContent = `${round} / ${maxRounds}`;
+      setupLevel(newLevel);
+    });
+
+    // ===== 초기 설정 =====
+    (function init() {
+      try {
+        const savedBest = localStorage.getItem("dongryu_best_score");
+        if (savedBest !== null) {
+          bestScore = Number(savedBest) || 0;
+          bestScoreDisplay.textContent = bestScore;
+        }
+      } catch (e) {}
+
+      const observer = new MutationObserver(() => {
+        try {
+          localStorage.setItem("dongryu_best_score", String(bestScore));
+        } catch (e) {}
+      });
+      observer.observe(bestScoreDisplay, { childList: true });
+
+      roundDisplay.textContent = `${round} / ${maxRounds}`;
+      setupLevel(currentLevel);
+    })();
+  </script>
+</body>
+</html>
